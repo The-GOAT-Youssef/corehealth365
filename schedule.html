@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metabolic Architect | CoreHealth</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f2f1; --card-bg: #ffffff; --text-main: #1a1a1a;
+            --text-light: #717171; --accent-purple: #6c5ce7; --accent-green: #00b894;
+            --accent-red: #ff7675; --radius: 24px; --shadow: 0 10px 40px rgba(0,0,0,0.04);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 40px 20px; }
+        
+        .nav-minimal { max-width: 1100px; margin: 0 auto 40px; display: flex; justify-content: space-between; align-items: center; }
+        .back-btn { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; color: var(--text-light); transition: 0.2s; }
+        .back-btn:hover { color: #000; }
+
+        .container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 400px; gap: 40px; }
+        
+        /* Left Side: Editor */
+        .editor-header { margin-bottom: 25px; }
+        .pace-selector { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 30px; }
+        .pace-btn { background: #fff; border: 2px solid transparent; padding: 15px; border-radius: 18px; cursor: pointer; transition: 0.3s; box-shadow: var(--shadow); }
+        .pace-btn.active { border-color: var(--accent-purple); background: #f9f8ff; }
+        .pace-btn h4 { font-size: 0.9rem; margin-bottom: 4px; }
+        .pace-btn p { font-size: 0.7rem; color: var(--text-light); }
+
+        .editor-card { background: #fff; border-radius: var(--radius); padding: 30px; box-shadow: var(--shadow); }
+        .slot-row { display: flex; align-items: center; gap: 15px; padding: 12px; background: #f8f9fa; border-radius: 16px; margin-bottom: 12px; animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .time-box { background: #fff; border: 1px solid #eee; padding: 8px 12px; border-radius: 10px; width: 130px; }
+        .time-box input { border: none; outline: none; width: 100%; font-weight: 700; font-size: 0.85rem; }
+        .input-box { flex: 1; border: none; outline: none; background: transparent; font-weight: 500; font-size: 0.95rem; padding-left: 10px; }
+        
+        .add-btn { width: 100%; padding: 15px; border: 2px dashed #ddd; border-radius: 16px; background: none; color: var(--text-light); cursor: pointer; font-weight: 600; margin-top: 10px; transition: 0.2s; }
+        .add-btn:hover { border-color: var(--accent-purple); color: var(--accent-purple); }
+
+        /* Right Side: AI Sidebar */
+        .ai-sidebar { position: sticky; top: 40px; }
+        .ai-card { background: #000; color: #fff; padding: 35px; border-radius: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+        
+        .status-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
+        .score-box { text-align: center; }
+        .score-val { font-size: 3rem; font-weight: 800; line-height: 1; }
+        .score-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-top: 5px; }
+        
+        .analysis-tag { display: inline-block; padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; margin-bottom: 20px; }
+        .tag-good { background: rgba(0, 184, 148, 0.2); color: var(--accent-green); }
+        .tag-bad { background: rgba(255, 118, 117, 0.2); color: var(--accent-red); }
+
+        .report-item { display: flex; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #333; }
+        .report-item:last-child { border: none; }
+        .report-icon { color: var(--accent-purple); }
+        .report-content h5 { font-size: 0.85rem; margin-bottom: 4px; }
+        .report-content p { font-size: 0.75rem; color: #aaa; line-height: 1.4; }
+
+        .apply-btn { width: 100%; padding: 20px; border-radius: 20px; border: none; background: #fff; color: #000; font-weight: 800; font-size: 1rem; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .apply-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(255,255,255,0.1); }
+        .lang-toggle { width: 40px; height: 40px; border-radius: 50%; background: #eee; border: 2px solid white; box-shadow: var(--shadow); display:flex; align-items:center; justify-content:center; font-weight:800; cursor:pointer; }
+        @media (max-width: 900px) {
+            .container { grid-template-columns: 1fr; gap: 20px; padding: 0 12px; }
+            .ai-sidebar { position: static; top: auto; }
+            .nav-minimal { padding: 0 10px; }
+            .pace-selector { grid-template-columns: repeat(2, 1fr); }
+            .editor-card { padding: 20px; }
+            .apply-btn { padding: 16px; }
+            .lang-toggle { display: none; }
+        }
+
+        @media (max-width: 480px) {
+            .pace-selector { grid-template-columns: 1fr; }
+            .slot-row { flex-direction: column; align-items: stretch; gap: 10px; }
+            .time-box { width: 100%; }
+            .input-box { padding-left: 0; }
+            .report-item { flex-direction: row; gap: 12px; }
+            .ai-card { padding: 20px; border-radius: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="nav-minimal">
+        <div style="display:flex; align-items:center; gap:12px;"><div class="back-btn" onclick="location.href='index.html'"><i data-lucide="arrow-left"></i> <span id="backText">Return to Dashboard</span></div></div>
+        <div style="display:flex; align-items:center; gap:12px;"><div id="groupLabel" style="font-weight: 800; font-size: 0.8rem; background: #000; color: #fff; padding: 8px 16px; border-radius: 50px;">GROUP 2: LEAN</div><button id="langToggle" class="lang-toggle" aria-label="Toggle language">EN</button></div>
+    </div>
+
+    <div class="container">
+        <div class="main-editor">
+            <div class="editor-header">
+                <h1 id="scheduleTitle" style="font-size: 2.2rem; font-weight: 800; margin-bottom: 5px;">Schedule Architect</h1>
+                <p id="scheduleDesc" style="color: var(--text-light)">Adjust your metabolic windows. Our AI evaluates every change.</p>
+            </div>
+
+            <div class="pace-selector">
+                <div class="pace-btn" id="btn-Turbo" onclick="applyTemplate('Turbo')">
+                    <h4>Turbo Pace</h4>
+                    <p>6 meals / High Met</p>
+                </div>
+                <div class="pace-btn active" id="btn-Balanced" onclick="applyTemplate('Balanced')">
+                    <h4>Balanced</h4>
+                    <p>4 meals / Steady</p>
+                </div>
+                <div class="pace-btn" id="btn-Steady" onclick="applyTemplate('Steady')">
+                    <h4>Steady</h4>
+                    <p>2-3 meals / Focused</p>
+                </div>
+            </div>
+
+            <div class="editor-card">
+                <div id="slotContainer"></div>
+                <button class="add-btn" onclick="addSlot()">+ Add custom meal window</button>
+            </div>
+        </div>
+
+        <div class="ai-sidebar">
+            <div class="ai-card">
+                <div class="status-header">
+                    <div class="score-box">
+                        <div class="score-val" id="aiScore">--</div>
+                        <div class="score-label">Efficiency</div>
+                    </div>
+                    <div id="statusTag" class="analysis-tag tag-good">Analyzing...</div>
+                </div>
+
+                <div id="aiReport">
+                    </div>
+
+                <button class="apply-btn" onclick="saveData()">Apply to CoreHealth</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const group = parseInt(localStorage.getItem('userGroup')) || 2;
+        const templates = {
+            1: { Turbo: ["07:00", "10:00", "13:00", "16:00", "19:00", "22:00"], Balanced: ["08:00", "12:00", "16:00", "20:00"], Steady: ["09:00", "14:00", "20:00"] },
+            2: { Turbo: ["07:30", "11:00", "14:00", "17:30", "20:30"], Balanced: ["08:00", "13:00", "18:00", "21:00"], Steady: ["10:00", "15:00", "20:00"] },
+            3: { Turbo: ["08:00", "11:00", "13:00", "16:00", "19:00"], Balanced: ["09:00", "13:00", "18:00"], Steady: ["12:00", "19:00"] }
+        };
+
+        function applyTemplate(pace) {
+            const times = templates[group][pace];
+            const container = document.getElementById('slotContainer');
+            container.innerHTML = '';
+            times.forEach((t, i) => addSlot(t, `Meal ${i+1}`));
+            
+            document.querySelectorAll('.pace-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-'+pace).classList.add('active');
+            runAI();
+        }
+
+        function addSlot(time = "12:00", val = "New Meal") {
+            const id = Math.random().toString(36).substr(2, 9);
+            const html = `
+                <div class="slot-row" id="${id}">
+                    <div class="time-box"><input type="time" value="${time}" onchange="runAI()"></div>
+                    <input type="text" class="input-box" value="${val}" oninput="runAI()">
+                    <i data-lucide="trash-2" size="16" style="color:#ddd; cursor:pointer" onclick="document.getElementById('${id}').remove(); runAI();"></i>
+                </div>
+            `;
+            document.getElementById('slotContainer').insertAdjacentHTML('beforeend', html);
+            lucide.createIcons();
+            runAI();
+        }
+
+        function runAI() {
+            const rows = Array.from(document.querySelectorAll('.slot-row'));
+            const times = rows.map(r => r.querySelector('input[type="time"]').value).sort();
+            const count = rows.length;
+            
+            let score = 100;
+            let insights = [];
+
+            // Analysis 1: Frequency vs Group Goal
+            if (group === 1 && count < 4) {
+                score -= 30;
+                insights.push({h: "Caloric Deficit Risk", p: "Bulk groups require 4+ windows to prevent muscle catabolism.", icon: "alert-triangle"});
+            } else if (group === 3 && count > 4) {
+                score -= 25;
+                insights.push({h: "Insulin Spiking", p: "Too many windows prevent lipolysis (fat burning). Aim for 2-3 windows.", icon: "zap-off"});
+            } else {
+                insights.push({h: "Frequency Optimized", p: "Meal count aligns with your metabolic group profile.", icon: "check-circle"});
+            }
+
+            // Analysis 2: Time Gap Logic
+            const gaps = [];
+            for(let i=1; i<times.length; i++) {
+                const diff = (new Date(`1970-01-01T${times[i]}`) - new Date(`1970-01-01T${times[i-1]}`)) / 3600000;
+                gaps.push(diff);
+            }
+
+            const smallGaps = gaps.filter(g => g < 2).length;
+            if (smallGaps > 0) {
+                score -= (smallGaps * 15);
+                insights.push({h: "Digestive Congestion", p: "Some meals are less than 2h apart. This can lead to bloating.", icon: "activity"});
+            }
+
+            const largeGaps = gaps.filter(g => g > 6).length;
+            if (largeGaps > 0 && group !== 3) {
+                score -= 10;
+                insights.push({h: "Energy Crash Zone", p: "A gap exceeds 6 hours. Expect significant glucose drops.", icon: "battery-low"});
+            }
+
+            // Update UI
+            document.getElementById('aiScore').innerText = Math.max(score, 0);
+            const tag = document.getElementById('statusTag');
+            if(score > 80) { tag.innerText = "Elite Plan"; tag.className = "analysis-tag tag-good"; }
+            else if(score > 60) { tag.innerText = "Acceptable"; tag.className = "analysis-tag"; tag.style.color="#fbc531"; tag.style.background="rgba(251,197,49,0.1)"; }
+            else { tag.innerText = "High Stress"; tag.className = "analysis-tag tag-bad"; }
+
+            document.getElementById('aiReport').innerHTML = insights.map(ins => `
+                <div class="report-item">
+                    <i data-lucide="${ins.icon}" class="report-icon" size="18"></i>
+                    <div class="report-content">
+                        <h5>${ins.h}</h5>
+                        <p>${ins.p}</p>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function saveData() {
+            const rows = Array.from(document.querySelectorAll('.slot-row'));
+            const data = rows.map(r => ({
+                t: r.querySelector('input[type="time"]').value,
+                v: r.querySelector('.input-box').value
+            }));
+            localStorage.setItem('userSchedule', JSON.stringify(data));
+            location.href = 'index.html';
+        }
+
+        document.getElementById('groupLabel').innerText = `GROUP ${group}: ${group==1?'BULK':group==2?'LEAN':'LOSS'}`;
+        applyTemplate('Balanced');
+
+        // Minimal language toggling support for schedule page
+        (function(){
+            const translations = {
+                en: { back: 'Return to Dashboard', title: 'Schedule Architect', desc: 'Adjust your metabolic windows. Our AI evaluates every change.', addSlot: '+ Add custom meal window', apply: 'Apply to CoreHealth', turbo: 'Turbo Pace', balanced: 'Balanced', steady: 'Steady' },
+                ar: { back: 'العودة إلى لوحة التحكم', title: 'مصمم الجدول', desc: 'اضبط نوافذك الأيضية. يقوم الذكاء بتقييم كل تغيير.', addSlot: '+ إضافة نافذة وجبة مخصصة', apply: 'تطبيق على CoreHealth', turbo: 'وتيرة تيربو', balanced: 'متوازن', steady: 'ثابت' }
+            };
+
+            const langBtn = document.getElementById('langToggle');
+            let lang = localStorage.getItem('siteLang') || 'en';
+            function applyLang() {
+                const t = translations[lang];
+                document.documentElement.lang = lang;
+                document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+                langBtn.innerText = (lang === 'ar') ? 'AR' : 'EN';
+                document.getElementById('backText').innerText = t.back;
+                document.getElementById('scheduleTitle').innerText = t.title;
+                document.getElementById('scheduleDesc').innerText = t.desc;
+                document.querySelector('.add-btn').innerText = t.addSlot;
+                document.querySelector('.apply-btn').innerText = t.apply;
+                // pace buttons
+                document.querySelector('#btn-Turbo h4').innerText = t.turbo;
+                document.querySelector('#btn-Balanced h4').innerText = t.balanced;
+                document.querySelector('#btn-Steady h4').innerText = t.steady;
+            }
+
+            langBtn.addEventListener('click', () => { lang = (lang === 'en') ? 'ar' : 'en'; localStorage.setItem('siteLang', lang); applyLang(); });
+            applyLang();
+        })();
+    </script>
+</body>
+</html>

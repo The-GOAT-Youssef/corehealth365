@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Body Analysis | CoreHealth</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --accent-build: #3498db; /* Blue for Strength */
+            --accent-maintain: #2ecc71; /* Green for Health */
+            --accent-burn: #e67e22; /* Orange for Energy/Fat Burn */
+            --radius: 40px;
+            --shadow: 0 20px 50px rgba(0,0,0,0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: #1e293b; padding: 20px; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+
+        .app-shell { width: 100%; max-width: 600px; animation: fadeIn 0.8s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Navigation Header */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 10px; }
+        .back-circle { width: 45px; height: 45px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: var(--shadow); transition: 0.3s; }
+        .back-circle:hover { transform: scale(1.1); }
+
+        /* Main Input Card */
+        .main-card { background: var(--card-bg); border-radius: var(--radius); padding: 45px; box-shadow: var(--shadow); position: relative; overflow: hidden; }
+        
+        h1 { font-size: 2.2rem; font-weight: 800; letter-spacing: -1.5px; margin-bottom: 8px; }
+        p.desc { color: #64748b; font-size: 0.95rem; margin-bottom: 35px; }
+
+        /* Input Styling */
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .input-box { position: relative; }
+        .input-box label { display: block; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #94a3b8; margin-bottom: 10px; letter-spacing: 1px; }
+        .input-box input { 
+            width: 100%; padding: 20px; border-radius: 20px; border: 2px solid #f1f5f9; 
+            font-size: 1.2rem; font-weight: 700; outline: none; transition: 0.3s; background: #f8fafc;
+        }
+        .input-box input:focus { border-color: #000; background: #fff; }
+        .input-box .unit { position: absolute; right: 20px; bottom: 22px; font-weight: 800; font-size: 0.7rem; color: #cbd5e1; }
+
+        /* The Button */
+        .btn-analyze { 
+            width: 100%; padding: 22px; border-radius: 24px; border: none; 
+            background: #000; color: #fff; font-weight: 800; font-size: 1.1rem; 
+            cursor: pointer; transition: 0.4s; display: flex; align-items: center; justify-content: center; gap: 12px;
+        }
+        .btn-analyze:hover { transform: translateY(-4px); box-shadow: 0 15px 30px rgba(0,0,0,0.2); }
+
+        /* Result Section - Integrated below */
+        #resultArea { margin-top: 30px; display: none; border-top: 2px dashed #f1f5f9; padding-top: 35px; animation: expand 0.5s ease; }
+        @keyframes expand { from { opacity: 0; max-height: 0; } to { opacity: 1; max-height: 1000px; } }
+
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: 50px; color: white; font-weight: 800; font-size: 0.8rem; margin-bottom: 20px; }
+        
+        .score-display { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+        .score-num { font-size: 5rem; font-weight: 900; letter-spacing: -4px; line-height: 1; }
+        .score-text { font-size: 1.2rem; font-weight: 700; color: #64748b; }
+
+        .advice-card { background: #f8fafc; padding: 25px; border-radius: 25px; margin-top: 25px; border-left: 6px solid #000; }
+        .advice-card h4 { font-size: 1rem; font-weight: 800; margin-bottom: 8px; }
+        .advice-card p { font-size: 0.9rem; line-height: 1.6; color: #475569; }
+
+        .go-btn { 
+            margin-top: 30px; display: block; width: 100%; padding: 20px; 
+            background: #f1f5f9; border-radius: 20px; text-align: center; 
+            text-decoration: none; color: #000; font-weight: 800; transition: 0.3s;
+        }
+        .go-btn:hover { background: #e2e8f0; }
+
+        .lang-toggle { width: 40px; height: 40px; border-radius: 50%; background: #eee; border: 2px solid white; box-shadow: var(--shadow); display:flex; align-items:center; justify-content:center; font-weight:800; cursor:pointer; }
+
+        @media (max-width: 700px) {
+            body { padding: 12px; }
+            .app-shell { max-width: 100%; padding: 0 6px; }
+            .main-card { padding: 22px; border-radius: 18px; }
+            .input-row { grid-template-columns: 1fr; gap: 12px; }
+            .input-box input { padding: 14px; font-size: 1rem; }
+            .btn-analyze { padding: 16px; border-radius: 14px; font-size: 1rem; }
+            .score-num { font-size: 3rem; }
+            .score-display { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .back-circle { width: 40px; height: 40px; }
+            .go-btn { padding: 14px; border-radius: 14px; }
+            .lang-toggle { display: none; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-shell">
+        <div class="top-nav">
+            <div style="display:flex; align-items:center; gap:12px;"><div class="back-circle" onclick="location.href='index.html'"><i data-lucide="chevron-left"></i></div><button id="langToggle" class="lang-toggle" aria-label="Toggle language">EN</button></div>
+        </div>
+
+        <div class="main-card">
+            <h1 id="bmiTitle">Body Analysis</h1>
+            <p id="bmiDesc" class="desc">Enter your stats to find your ideal training pace.</p>
+
+                <div class="input-row">
+                    <div class="input-box">
+                        <label id="labelHeight">Height</label>
+                        <input type="number" id="h" placeholder="---">
+                        <span class="unit" id="unitHeight">CM</span>
+                    </div>
+                    <div class="input-box">
+                        <label id="labelWeight">Weight</label>
+                        <input type="number" id="w" placeholder="---">
+                        <span class="unit" id="unitWeight">KG</span>
+                    </div>
+                </div>
+
+            <button id="analyzeBtn" class="btn-analyze" onclick="processMetrics()">
+                Run Analysis <i data-lucide="zap" fill="currentColor"></i>
+            </button>
+
+            <div id="resultArea">
+                <div id="groupBadge" class="badge">
+                    <i data-lucide="shield-check" size="16"></i> <span id="groupName">Analyzing...</span>
+                </div>
+                
+                <div class="score-display">
+                    <span class="score-num" id="bmiVal">--</span>
+                    <span class="score-text" id="bmiStatus">Normal</span>
+                </div>
+
+                <div class="advice-card" id="adviceCard">
+                    <h4 id="adviceTitle">Perfect Balance</h4>
+                    <p id="adviceText">You're in the healthy range! Your schedule is set to 'Maintain' mode to keep your energy high and body lean.</p>
+                </div>
+
+                <a id="startProgramBtn" href="index.html" class="go-btn">Start My Program <i data-lucide="arrow-right" size="16"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Language support (minimal)
+        (function(){
+            const translations = {
+                en: { title: 'Body Analysis', desc: 'Enter your stats to find your ideal training pace.', height: 'Height', weight: 'Weight', cm: 'CM', kg: 'KG', run: 'Run Analysis', start: 'Start My Program', alertFill: 'Please enter both numbers first!' },
+                ar: { title: 'تحليل الجسم', desc: 'أدخل بياناتك للعثور على وتيرة التدريب المناسبة.', height: 'الطول', weight: 'الوزن', cm: 'سم', kg: 'كجم', run: 'تشغيل التحليل', start: 'ابدأ برنامجي', alertFill: 'يرجى إدخال الرقمين أولاً!' }
+            };
+
+            const langBtn = document.getElementById('langToggle');
+            let lang = localStorage.getItem('siteLang') || 'en';
+            function apply() {
+                const t = translations[lang];
+                document.documentElement.lang = lang;
+                document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+                langBtn.innerText = (lang === 'ar') ? 'AR' : 'EN';
+                document.getElementById('bmiTitle').innerText = t.title;
+                document.getElementById('bmiDesc').innerText = t.desc;
+                document.getElementById('labelHeight').innerText = t.height;
+                document.getElementById('labelWeight').innerText = t.weight;
+                document.getElementById('unitHeight').innerText = t.cm;
+                document.getElementById('unitWeight').innerText = t.kg;
+                document.getElementById('analyzeBtn').childNodes[0].textContent = t.run + ' ';
+                document.getElementById('startProgramBtn').childNodes[0].textContent = t.start + ' ';
+                // override alert message used by processMetrics
+                window._bmi_alert = t.alertFill;
+            }
+
+            langBtn.addEventListener('click', () => { lang = (lang === 'en') ? 'ar' : 'en'; localStorage.setItem('siteLang', lang); apply(); });
+            apply();
+        })();
+
+        function processMetrics() {
+            const height = document.getElementById('h').value / 100;
+            const weight = document.getElementById('w').value;
+
+            if (!height || !weight) {
+                alert(window._bmi_alert || "Please enter both numbers first!");
+                return;
+            }
+
+            const bmi = (weight / (height * height)).toFixed(1);
+            let group = 2;
+            let groupName = "";
+            let statusText = "";
+            let adviceTitle = "";
+            let adviceText = "";
+            let color = "";
+
+            if (bmi < 18.5) {
+                group = 1;
+                groupName = "GOAL: BUILD";
+                statusText = "Slim";
+                color = "var(--accent-build)";
+                adviceTitle = "Strength Focus Needed";
+                adviceText = "You're currently in a lighter range. We've set your plan to 'Turbo' to help you build solid muscle and strength safely.";
+            } else if (bmi < 25) {
+                group = 2;
+                groupName = "GOAL: MAINTAIN";
+                statusText = "Fit";
+                color = "var(--accent-maintain)";
+                adviceTitle = "Optimal Balance";
+                adviceText = "Great stats! Your body is in a healthy rhythm. Your plan is set to 'Balanced' to keep your fitness exactly where it is.";
+            } else {
+                group = 3;
+                groupName = "GOAL: BURN";
+                statusText = "Heavy";
+                color = "var(--accent-burn)";
+                adviceTitle = "Efficiency Mode";
+                adviceText = "Your focus is on burning off extra weight. We've set your plan to 'Steady' to maximize fat-loss windows throughout the day.";
+            }
+
+            // Save for the whole site to use
+            localStorage.setItem('userGroup', group);
+
+            // Update UI
+            document.getElementById('bmiVal').innerText = bmi;
+            document.getElementById('bmiStatus').innerText = statusText;
+            document.getElementById('groupName').innerText = groupName;
+            document.getElementById('groupBadge').style.backgroundColor = color;
+            document.getElementById('adviceCard').style.borderColor = color;
+            document.getElementById('adviceTitle').innerText = adviceTitle;
+            document.getElementById('adviceText').innerText = adviceText;
+
+            // Show result
+            document.getElementById('resultArea').style.display = "block";
+            
+            // Re-render icons for the new HTML
+            lucide.createIcons();
+
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

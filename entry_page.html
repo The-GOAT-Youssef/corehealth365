@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Welcome — CoreHealth</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+
+:root{
+--bg:#f4f7f6;
+--card:#ffffff;
+--muted:#6b7280;
+--accent:#000;
+--radius:40px;
+--shadow:0 25px 60px rgba(0,0,0,0.06);
+}
+
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+}
+
+body{
+font-family:Inter,system-ui;
+background:var(--bg);
+height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+padding:30px;
+color:#111;
+}
+
+/* floating animation */
+@keyframes floatCard{
+0%{transform:translateY(0px)}
+50%{transform:translateY(-10px)}
+100%{transform:translateY(0px)}
+}
+.card{
+width:100%;
+max-width:750px;
+min-height:500px;
+background:var(--card);
+border-radius:40px;
+padding:30px 50px;
+box-shadow:var(--shadow);
+animation:floatCard 6s ease-in-out infinite;
+display:flex;
+flex-direction:column;
+justify-content:center;
+}
+
+.brand{
+font-size:13px;
+font-weight:700;
+letter-spacing:1.5px;
+color:#8b8b8b;
+margin-bottom:10px;
+}
+
+.title{
+font-size:55px;
+font-weight:800;
+line-height:1.1;
+margin-bottom:18px;
+color:#1f2937;
+margin: 0;
+}
+
+.title2{
+font-size:55px;
+font-weight:800;
+line-height:1.1;
+margin-bottom:18px;
+color:#1f2937;
+}
+
+.subtitle{
+font-size:20px;
+color:#6b7280;
+margin-bottom:28px;
+max-width:600px;
+}
+
+.description{
+font-size:16px;
+line-height:1.6;
+color:#6b7280;
+margin-bottom:40px;
+max-width:620px;
+}
+
+.run-btn{
+width:100%;
+background:black;
+color:white;
+border:none;
+padding:22px;
+border-radius:40px;
+font-size:20px;
+font-weight:800;
+cursor:pointer;
+transition:.25s;
+}
+
+.run-btn:hover{
+transform:scale(1.02);
+}
+
+.meta{
+margin-top:14px;
+text-align:center;
+font-size:14px;
+color:#6b7280;
+}
+
+/* mobile */
+
+@media(max-width:700px){
+
+.card{
+padding:40px 30px;
+min-height:480px;
+}
+
+.title{
+font-size:40px;
+margin: 0;
+}
+
+.title2{
+font-size:40px;
+}
+
+.subtitle{
+font-size:18px;
+}
+
+.description{
+font-size:15px;
+}
+
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+
+<div class="brand">COREHEALTH</div>
+
+<h1 class="title">Welcome to</h1>
+<h1 class="title2">CoreHealth</h1>
+
+<p class="subtitle">
+Your intelligent health companion for building stronger habits and smarter routines.
+</p>
+
+<button id="runBtn" class="run-btn">
+Check Your BMI
+</button>
+
+<div class="meta">
+You can update your stats anytime later in your profile.
+</div>
+
+</div>
+
+<script>
+(function(){
+
+function safeSet(k,v){
+try{localStorage.setItem(k,v);}catch(e){}
+}
+
+function markSeenAndGo(target){
+safeSet('seenEntryPage','1');
+
+try{
+if(!localStorage.getItem('userGroup'))
+localStorage.setItem('userGroup','0');
+}catch(e){}
+
+setTimeout(function(){
+window.location.replace(target);
+},120);
+}
+
+document.getElementById('runBtn').addEventListener('click',function(){
+markSeenAndGo('bmi.html');
+});
+
+})();
+</script>
+
+</body>
+</html>

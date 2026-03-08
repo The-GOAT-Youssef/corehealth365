@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>CoreHealth | Professional Dashboard</title>
+        <script>
+        // First-visit redirect: send new users to entry_page.html once
+        (function(){
+            try{
+                var seen = localStorage.getItem('seenEntryPage');
+                if(!seen){
+                    var p = window.location.pathname || '';
+                    // if visiting the root or index page, redirect to entry page
+                    var name = (p.split('/').pop() || '').toLowerCase();
+                    if(name === '' || name === 'index.html'){
+                        window.location.replace('entry_page.html');
+                    }
+                }
+            }catch(e){}
+        })();
+        </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Baseline fallbacks for very old browsers */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: #f4f7f6; color: #2d3436; padding: 25px; }
+
+        /* CSS variables for modern browsers */
+        :root {
+            --bg-color: #f4f7f6; --card-bg: #ffffff; --text-main: #2d3436;
+            --text-light: #b2bec3; --accent-yellow: #fbc31e; --accent-purple: #a29bfe;
+            --accent-blue: #74b9ff; --accent-green: #55efc4; --radius: 30px;
+            --shadow: 0 10px 40px rgba(0,0,0,0.04);
+        }
+
+        /* Use var() where supported; earlier fallback values above ensure older browsers show acceptable colors */
+        body { background-color: var(--bg-color); color: var(--text-main); }
+
+        nav { 
+            display: flex; align-items: center; justify-content: space-between; 
+            padding: 12px 25px; background: var(--card-bg); border-radius: 50px; 
+            margin-bottom: 30px; box-shadow: var(--shadow);
+        }
+        .nav-links { display: flex; gap: 8px; }
+        .nav-item { 
+            display: flex; align-items: center; gap: 8px; padding: 10px 18px; 
+            border-radius: 30px; cursor: pointer; 
+            transition: background 0.22s ease, color 0.22s ease, transform 0.12s ease;
+            font-size: 0.85rem; font-weight: 500; color: rgba(0,0,0,0.45);
+            background: transparent;
+        }
+        .nav-item:hover { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.95); transform: translateY(-2px); }
+        .nav-item.active { background: #000; color: #fff; }
+
+        /* Desktop-first grid layout (fallbacks kept elsewhere); named areas ensure predictable stacking */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 320px 1fr 350px;
+            grid-template-areas: "left main right";
+            gap: 25px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Modern browsers: explicit grid layout with named areas for predictable stacking */
+        @supports (display: grid) {
+            .grid-container {
+                display: grid;
+                grid-template-columns: 320px 1fr 350px;
+                grid-template-areas: "left main right";
+                gap: 25px;
+                max-width: 1600px;
+                margin: 0 auto;
+            }
+            .grid-container > .side-col:first-child { grid-area: left; }
+            .grid-container > .main-col { grid-area: main; }
+            .grid-container > .side-col:last-child { grid-area: right; }
+        }
+
+        .card { background: var(--card-bg); border-radius: var(--radius); padding: 25px; box-shadow: var(--shadow); margin-bottom: 25px; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: 800; font-size: 1rem; letter-spacing: -0.5px; }
+
+        .calendar-strip { display: flex; justify-content: space-between; margin-bottom: 25px; }
+        .date-pill { text-align: center; padding: 12px 8px; border-radius: 18px; width: 50px; color: var(--text-light); font-size: 0.8rem; }
+        .date-pill.active { background: var(--accent-yellow); color: #000; font-weight: 800; transform: scale(1.05); }
+        
+        .timeline { border-left: 2px dashed #eee; margin-left: 10px; padding-left: 20px; }
+        .timeline-item { position: relative; margin-bottom: 25px; }
+        .timeline-item::before { content: ''; position: absolute; left: -27px; top: 0; width: 12px; height: 12px; background: #dfe6e9; border: 3px solid white; border-radius: 50%; }
+
+        .diet-header { font-weight: 800; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .diet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .mini { padding: 20px; border-radius: 24px; position: relative; }
+        .mini p { font-size: 0.75rem; color: #636e72; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .mini-val { font-size: 1.4rem; font-weight: 900; margin-top: 5px; }
+
+        .intake-main { text-align: center; padding: 10px 0; }
+        .progress-circle-wrap { width: 220px; height: 220px; margin: 0 auto 10px; position: relative; display: flex; align-items: center; justify-content: center; }
+        .progress-ring-circle { 
+            stroke-dasharray: 440; stroke-dashoffset: 440; 
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1); 
+            stroke: var(--accent-purple);
+        }
+        .cal-center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        .water-track { display: flex; gap: 4px; margin-top: 15px; }
+        .water-segment { flex: 1; height: 12px; background: #f1f2f6; border-radius: 4px; cursor: pointer; transition: 0.3s; }
+        .water-segment.filled { background: var(--accent-blue); box-shadow: 0 0 10px rgba(116, 185, 255, 0.4); }
+
+        .recipe-hero { width: 100%; max-width: 100%; height: auto; border-radius: 24px; object-fit: cover; margin-bottom: 15px; display:block; }
+        .btn { width: 100%; padding: 18px; border-radius: 22px; border: none; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
+        .btn-black { background: #000; color: #fff; }
+        .btn-black:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .btn-blue { background: var(--accent-blue); color: #fff; }
+
+        .shopping-item { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; margin-bottom: 12px; }
+        .shopping-item input { width: 18px; height: 18px; accent-color: #000; }
+        .lang-toggle { width: 40px; height: 40px; border-radius: 50%; background: #eee; border: 2px solid white; box-shadow: var(--shadow); display:flex; align-items:center; justify-content:center; font-weight:800; cursor:pointer; }
+        @media (max-width: 1100px) {
+            /* Tablet: use an explicit grid with areas so the right column always spans full width below */
+            .grid-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: auto auto;
+                grid-template-areas:
+                    "left main"
+                    "right right";
+                gap: 18px;
+                padding: 0 10px;
+                max-width: 1100px;
+                margin: 0 auto;
+            }
+            .grid-container > .side-col:first-child { grid-area: left; }
+            .grid-container > .main-col { grid-area: main; }
+            .grid-container > .side-col:last-child { grid-area: right; width: 100%; }
+            .grid-container > .side-col:last-child .card { margin-left: 0; margin-right: 0; }
+            .progress-circle-wrap { width: 180px; height: 180px; }
+            .progress-ring { width: 180px; height: 180px; }
+            .recipe-hero { height: 180px; }
+        }
+
+        @media (max-width: 700px) {
+            body { padding: 14px; }
+            nav { flex-wrap: wrap; gap: 10px; padding: 10px; border-radius: 18px; position: relative; z-index: 1000; }
+            /* keep primary nav accessible on phones via horizontal scroll instead of hiding */
+            .nav-links { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; gap: 8px; padding-bottom: 6px; }
+            #mobileMenuBtn { display: inline-flex; align-items: center; justify-content: center; order: -1; margin-right: 8px; }
+            .nav-item { padding: 12px 14px; font-size: 0.95rem; }
+            /* Mobile: explicit stacked grid so we can reorder content (main first) */
+            .grid-container { display: grid; grid-template-columns: 1fr; grid-template-areas: "main" "left" "right"; gap: 16px; max-width: 100%; margin: 0; }
+            .grid-container > .main-col { grid-area: main; }
+            .grid-container > .side-col:first-child { grid-area: left; }
+            .grid-container > .side-col:last-child { grid-area: right; }
+            .card { padding: 18px; border-radius: 18px; }
+            .progress-circle-wrap { width: 140px; height: 140px; }
+            .progress-ring { width: 140px; height: 140px; }
+            .cal-center-text #calVal { font-size: 2rem; }
+            .recipe-hero { height: 140px; border-radius: 14px; }
+            .btn { padding: 12px; border-radius: 14px; }
+            .date-pill { width: 44px; padding: 10px 6px; font-size: 0.75rem; }
+            .diet-grid { grid-template-columns: 1fr; }
+            .mini { padding: 12px; border-radius: 12px; }
+            .water-track { gap: 6px; }
+            .lang-toggle { display: inline-flex; width: 36px; height: 36px; padding: 6px; font-size: 0.8rem; }
+        }
+        #mobileMenuBtn { display: none; }
+        .mobile-menu { display: none; position: fixed; top: 72px; right: 12px; background: var(--card-bg); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.12); padding: 10px; z-index: 1200; min-width: 180px; }
+        .mobile-menu.open { display: block; }
+        .mobile-menu .nav-item { display: block; padding: 12px 14px; border-radius: 8px; margin-bottom: 6px; }
+        .mobile-menu .nav-item:last-child { margin-bottom: 0; }
+
+        .progress-ring { width: 220px; height: 220px; display: block; }
+        .progress-ring-bg, .progress-ring-circle { transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1), stroke-width 0.2s; }
+        @media (max-width: 700px) {
+            .progress-ring { width: 140px; height: 140px; }
+            .progress-ring-bg, .progress-ring-circle { stroke-width: 10; }
+        }
+        .cal-center-text #calVal { font-size: clamp(1.6rem, 5.5vw, 3rem); }
+        #mobileMenuBtn { background: transparent; border-radius: 10px; padding: 6px; color: var(--text-main); }
+        #mobileMenuBtn svg { width: 26px; height: 26px; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="nav-links">
+            <div class="nav-item active" id="homeNav"><i data-lucide="layout"></i> <span id="homeNavText">Home</span></div>
+            <div class="nav-item" id="bmiNav" onclick="location.href='bmi.html'"><i data-lucide="scale"></i> <span id="bmiNavText">BMI</span></div>
+            <div class="nav-item" id="scheduleNav" onclick="location.href='schedule.html'"><i data-lucide="calendar"></i> <span id="scheduleNavText">Schedule</span></div>
+            <div class="nav-item" id="orderNav" onclick="location.href='https://www.amazon.com/'" target="_blank"><i data-lucide="shopping-cart"></i> <span id="orderNavText">Order</span></div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div id="groupBadge" style="font-weight: 800; font-size: 0.75rem; background: #000; color: #fff; padding: 10px 20px; border-radius: 50px;">POWER BULK</div>
+            <button id="langToggle" class="lang-toggle" aria-label="Toggle language">EN</button>
+        </div>
+        <button id="mobileMenuBtn" aria-label="Open menu" style="border:none;background:transparent;margin-left:12px;cursor:pointer"><i data-lucide="menu"></i></button>
+        <div id="mobileMenu" class="mobile-menu" aria-hidden="true"></div>
+    </nav>
+
+    <div class="grid-container">
+        
+        <div class="side-col">
+            <div class="card">
+                <div class="card-header" id="mealScheduleHeader">Meal Schedule<i data-lucide="clock" size="16"></i></div>
+                <div class="calendar-strip" id="calendar"></div>
+                <div class="timeline" id="dailyEvents"></div>
+            </div>
+
+           
+        </div>
+
+        <div class="main-col">
+            <div class="card">
+                <div class="diet-grid" id="dietStats">
+                    </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header" id="dailyIntakeHeader">
+                    Daily Intake Analysis
+                    <i data-lucide="plus-circle" size="20" onclick="addCustomCal()" style="cursor:pointer; color: var(--accent-purple)"></i>
+                </div>
+                <div class="intake-main">
+                    <div class="progress-circle-wrap">
+                        <svg class="progress-ring" viewBox="0 0 220 220" preserveAspectRatio="xMidYMid meet">
+                            <circle class="progress-ring-bg" stroke="#f1f2f6" stroke-width="14" fill="transparent" r="85" cx="110" cy="110"/>
+                            <circle id="ringFill" class="progress-ring-circle" stroke-width="14" stroke-linecap="round" fill="transparent" r="85" cx="110" cy="110"/>
+                        </svg>
+                        <div class="cal-center-text">
+                            <div id="calVal" style="font-weight: 900; letter-spacing: -2px;">0</div>
+                            <div id="caloriesLabel" style="font-size: 0.7rem; font-weight: 800; color: var(--text-light); text-transform: uppercase;">Calories</div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: left; margin-top: 20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                            <span id="hydrationLabel" style="font-size:0.8rem; font-weight:800; color: #1a1a1a;">HYDRATION</span>
+                            <span id="waterText" style="font-size:0.85rem; font-weight:800; color: var(--accent-blue);">0 / 3.5L</span>
+                        </div>
+                        <div class="water-track" id="waterTrack"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="side-col">
+            <div class="card">
+                <div class="card-header" id="mealSuggestionHeader">Meal Suggestion</div>
+                <div id="recipeCard"></div>
+                <button id="exploreBtn" class="btn btn-blue" style="margin-top: 15px;" onclick="cycleRecipe()">Explore More</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">Macro Distribution</div>
+                <div style="display: flex; justify-content: space-around; text-align: center;">
+                    <div><div style="font-weight:900; color:var(--accent-purple)">30%</div><p style="font-size:0.6rem; font-weight:700">PRO</p></div>
+                    <div><div style="font-weight:900; color:var(--accent-yellow)">50%</div><p style="font-size:0.6rem; font-weight:700">CARB</p></div>
+                    <div><div style="font-weight:900; color:var(--accent-blue)">20%</div><p style="font-size:0.6rem; font-weight:700">FAT</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  <script>
+
+const translations = {
+    en: {
+        home: 'Home',
+        bmi: 'BMI',
+        schedule: 'Schedule',
+        order: 'Order',
+        mealSchedule: 'Meal Schedule',
+        dailyIntake: 'Daily Intake Analysis',
+        hydration: 'HYDRATION STATUS',
+        calories: 'Calories',
+        water: 'Water',
+        weight: 'Weight',
+        goal: 'Goal',
+        day: 'DAY',
+        selectedBasedOn: 'Selected based on your plan',
+        exploreMore: 'Explore More',
+        viewPreparation: 'View Preparation',
+        mealSuggestion: 'Meal Suggestion',
+        macroDistribution: 'Macro Distribution',
+        pro: 'PRO',
+        carb: 'CARB',
+        fat: 'FAT'
+    },
+    ar: {
+        home: 'الرئيسية',
+        bmi: 'مؤشر كتلة الجسم',
+        schedule: 'الجدول',
+        order: 'اطلب',
+        mealSchedule: 'جدول الوجبات',
+        dailyIntake: 'تحليل الاستهلاك اليومي',
+        hydration: 'حالة الترطيب',
+        calories: 'سعرات حرارية',
+        water: 'ماء',
+        weight: 'الوزن',
+        goal: 'الهدف',
+        day: 'اليوم',
+        selectedBasedOn: 'تم الاختيار بناءً على خطتك',
+        exploreMore: 'استكشف المزيد',
+        viewPreparation: 'عرض التحضير',
+        mealSuggestion: 'اقتراح وجبة',
+        macroDistribution: 'توزيع المغذيات',
+        pro: 'بروتين',
+        carb: 'كربوهيدرات',
+        fat: 'دهون'
+    }
+};
+
+
+const groups = {
+
+    1:{
+        name_en:"Power Bulk",
+        name_ar:"باور بولك",
+        water:3.5,
+        cal:3200,
+        weightGoal:"+3 kg",
+
+        recipes:[
+            {title:"Steak & Sweet Potato",img:"111.jpg"},
+            {title:"Chicken Power Bowl",img:"chicken-power-bowl-73983f5a.jpg"},
+            {title:"Loaded Ground Beef and Potatoes",img:"Loaded+ground+beef+potatoes.jpg"},
+            {title:"Peanut Butter Banana Oats",img:"Overnight-Oats-with-Peanut-Butter-Banana-and-Greek-Yogurt-1.jpg"},
+            {title:"Egg and Cheese Toast",img:"hq720.jpg"},
+            {title:"Pasta with Salmon",img:"creamy-pasta-with-salmon.png"},
+            {title:"Mass Gainer Oats",img:"liia-jkR4zEIcnNA-unsplash.jpg"},
+            {title:"Salmon & Creamy Pasta",img:"222.jpg"}
+        ]
+    },
+
+    2:{
+        name_en:"Lean Maintain",
+        name_ar:"حافظ على القوام",
+        water:2.5,
+        cal:2200,
+        weightGoal:"Maintain",
+
+        recipes:[
+            {title:"Grilled Chicken Salad",img:"333.jpg"},
+            {title:"Avocado Toast & Egg",img:"444.jpg"},
+            {title:"Grilled Chicken & Quinoa",img:"1.jpg"},
+            {title:"Beef Stir Fry",img:"2.jpeg"},
+            {title:"Salmon & Sweet Potato",img:"3.jpeg"},
+            {title:"Shrimp & Rice Bowl",img:"4.jpg"},
+            {title:"Cottage Cheese Breakfast Plate",img:"images.jpeg"},
+            {title:"Turkey Wrap",img:"TurkeySwissAppleWraps-11.jpg"}
+        ]
+    },
+
+    3:{
+        name_en:"Weight Loss",
+        name_ar:"فقدان الوزن",
+        water:3.0,
+        cal:1800,
+        weightGoal:"-2 kg",
+
+        recipes:[
+            {title:"Zucchini Pesto Noodles",img:"555.jpg"},
+            {title:"White Fish & Asparagus",img:"666.jpg"},
+            {title:"Grilled Chicken Salad",img:"11.jpg"},
+            {title:"Egg White Omelet",img:"22.jpg"},
+            {title:"Tuna Bowl",img:"33.jpg"},
+            {title:"Greek Yogurt Protein Bowl",img:"44.jpg"},
+            {title:"Lean Beef & Veg Plate",img:"55.jpg"},
+            {title:"Quinoa Veggie Bowl",img:"777.jpg"}
+        ]
+    }
+
+};
+
+
+let currentGroup = parseInt(localStorage.getItem('userGroup')) || 1;
+let currentLang = localStorage.getItem('siteLang') || 'en';
+
+
+const today = new Date().toDateString();
+const savedDate = localStorage.getItem("lastVisitDate");
+
+if(savedDate !== today){
+
+    localStorage.setItem("consumedCalories",0);
+    localStorage.setItem("waterSegments",0);
+    localStorage.setItem("lastVisitDate",today);
+
+}
+
+
+let consumed = parseInt(localStorage.getItem("consumedCalories")) || 0;
+let waterSegs = parseInt(localStorage.getItem("waterSegments")) || 0;
+
+
+
+function setLanguage(lang){
+
+    currentLang = lang;
+
+    localStorage.setItem('siteLang',lang);
+
+    document.documentElement.lang = lang;
+
+    document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+
+    const btn = document.getElementById('langToggle');
+    if(btn) btn.innerText = (lang === 'ar') ? 'AR' : 'EN';
+
+    updateStaticTexts();
+    renderAll();
+
+    if(window.lucide) lucide.createIcons();
+
+}
+
+
+
+function toggleLanguage(){
+    setLanguage(currentLang === 'en' ? 'ar' : 'en');
+}
+
+
+
+function updateStaticTexts(){
+
+    const t = translations[currentLang];
+
+    const map = {
+
+        homeNavText:t.home,
+        bmiNavText:t.bmi,
+        scheduleNavText:t.schedule,
+        orderNavText:t.order,
+
+        hydrationLabel:t.hydration,
+        caloriesLabel:t.calories,
+
+        mealSuggestionHeader:t.mealSuggestion,
+        macroDistributionHeader:t.macroDistribution,
+
+        exploreBtn:t.exploreMore
+
+    };
+
+    Object.keys(map).forEach(id=>{
+        const el = document.getElementById(id);
+        if(el) el.innerText = map[id];
+    });
+
+    const mealHeader = document.getElementById('mealScheduleHeader');
+    if(mealHeader) mealHeader.innerHTML = t.mealSchedule + '<i data-lucide="clock" size="16"></i>';
+
+    const intakeHeader = document.getElementById('dailyIntakeHeader');
+    if(intakeHeader) intakeHeader.innerHTML =
+        t.dailyIntake +
+        ' <i data-lucide="plus-circle" size="20" onclick="addCustomCal()" style="cursor:pointer;color:var(--accent-purple)"></i>';
+
+}
+
+
+
+function renderAll(){
+
+    const data = groups[currentGroup];
+    const gname = (currentLang === 'ar') ? data.name_ar : data.name_en;
+
+    const badge = document.getElementById('groupBadge');
+    if(badge) badge.innerText = gname.toUpperCase();
+
+    const t = translations[currentLang];
+
+    const stats = document.getElementById('dietStats');
+
+    if(stats){
+
+        stats.innerHTML = `
+
+        <div class="mini" style="background:#eef2ff">
+        <p>${t.water}</p>
+        <div class="mini-val">${data.water}L</div>
+        </div>
+
+        <div class="mini" style="background:#fff9db">
+        <p>${t.weight}</p>
+        <div class="mini-val">${data.weightGoal}</div>
+        </div>
+
+        <div class="mini" style="background:#ebfbee">
+        <p>${t.goal}</p>
+        <div class="mini-val">${data.cal} kcal</div>
+        </div>
+
+        `;
+
+    }
+
+    renderWaterTrack();
+    updateWaterLabel();
+    renderCalendar();
+    renderTimeline();
+    cycleRecipe();
+    updateIntake();
+
+}
+
+
+
+function renderWaterTrack(){
+
+    const track = document.getElementById('waterTrack');
+    if(!track) return;
+
+    track.innerHTML = '';
+
+    for(let i=0;i<10;i++){
+
+        const seg = document.createElement('div');
+
+        seg.className = `water-segment ${i < waterSegs ? 'filled' : ''}`;
+
+        seg.onclick = ()=>{
+
+            waterSegs = (i === waterSegs-1) ? i : i+1;
+
+            localStorage.setItem("waterSegments",waterSegs);
+
+            renderWaterTrack();
+            updateWaterLabel();
+
+        };
+
+        track.appendChild(seg);
+
+    }
+
+}
+
+
+
+function updateWaterLabel(){
+
+    const total = groups[currentGroup].water;
+
+    const current = ((waterSegs/10)*total).toFixed(1);
+
+    const txt = document.getElementById('waterText');
+
+    if(txt) txt.innerText = `${current} / ${total}L`;
+
+}
+
+
+
+function addCustomCal(){
+
+    const val = prompt(currentLang==='ar'?'سعرات لتسجيلها:':'Calories to log:');
+
+    const num = parseInt(val);
+
+    if(!isNaN(num) && num>0){
+
+        consumed += num;
+
+        localStorage.setItem("consumedCalories",consumed);
+
+        updateIntake();
+
+    }
+
+}
+
+
+
+function updateIntake(){
+
+    const goal = groups[currentGroup].cal;
+
+    const val = document.getElementById('calVal');
+
+    if(val) val.innerText = consumed;
+
+    const pct = Math.min((consumed/goal),1);
+
+    const circumference = 2*Math.PI*85;
+
+    const offset = circumference - (pct*circumference);
+
+    const ring = document.getElementById('ringFill');
+
+    if(ring){
+
+        ring.style.strokeDasharray = circumference;
+        ring.style.strokeDashoffset = offset;
+
+    }
+
+}
+
+
+
+function renderCalendar(){
+
+    const cal = document.getElementById('calendar');
+    if(!cal) return;
+
+    const todayNum = new Date().getDate();
+
+    const t = translations[currentLang];
+
+    cal.innerHTML = [-2,-1,0,1,2].map(i=>`
+
+    <div class="date-pill ${i===0?'active':''}">
+    <span style="font-size:0.6rem;opacity:0.6">${t.day}</span><br>${todayNum+i}
+    </div>
+
+    `).join('');
+
+}
+
+
+
+function renderTimeline(){
+
+    const list = document.getElementById('dailyEvents');
+    if(!list) return;
+
+    const sched = JSON.parse(localStorage.getItem('userSchedule')) || [
+
+        {t:"08:00 AM",v:(currentLang==='ar'?'إعادة تعيين يومية':'Daily Reset')}
+
+    ];
+
+    list.innerHTML = sched.map(s=>`
+
+    <div class="timeline-item">
+    <div style="font-size:0.7rem;font-weight:800;color:var(--accent-purple)">${s.t}</div>
+    <div style="font-weight:700;font-size:0.95rem">${s.v}</div>
+    </div>
+
+    `).join('');
+
+}
+
+
+
+let recipeIdx = 0;
+
+function cycleRecipe(){
+
+    const list = groups[currentGroup].recipes;
+
+    const r = list[recipeIdx % list.length];
+
+    const data = groups[currentGroup];
+
+    const gname = (currentLang==='ar') ? data.name_ar : data.name_en;
+
+    const t = translations[currentLang];
+
+    const card = document.getElementById('recipeCard');
+
+    if(!card) return;
+
+    card.innerHTML = `
+
+    <img src="${r.img}" class="recipe-hero">
+
+    <h3 style="margin-bottom:4px;font-weight:800">${r.title}</h3>
+
+    <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:15px">
+    ${t.selectedBasedOn} ${gname}.
+    </p>
+
+    <a class="btn btn-black"
+    href="https://www.youtube.com/@NickDiGiovanni"
+    target="_blank"
+    rel="noopener">
+
+    ${t.viewPreparation}
+
+    </a>
+
+    `;
+
+    recipeIdx++;
+
+}
+
+
+
+function setupMobileMenu(){
+
+    const btn = document.getElementById('mobileMenuBtn');
+    const menu = document.getElementById('mobileMenu');
+    const links = document.querySelector('.nav-links');
+
+    if(!btn || !menu || !links) return;
+
+    menu.innerHTML = links.innerHTML.replace(/id="/g,'data-id="');
+
+    if(window.lucide) lucide.createIcons();
+
+    btn.addEventListener('click',()=>{
+
+        const open = menu.classList.toggle('open');
+
+        menu.setAttribute('aria-hidden',open?'false':'true');
+
+    });
+
+    document.addEventListener('click',(e)=>{
+
+        if(!menu.classList.contains('open')) return;
+
+        if(e.target.closest('#mobileMenu') || e.target.closest('#mobileMenuBtn')) return;
+
+        menu.classList.remove('open');
+
+        menu.setAttribute('aria-hidden','true');
+
+    });
+
+}
+
+
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+    setLanguage(currentLang);
+
+    renderAll();
+
+    setupMobileMenu();
+
+    setInterval(cycleRecipe,6000);
+
+});
+
+</script>
+</body>
+</html>
